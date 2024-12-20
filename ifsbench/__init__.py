@@ -13,7 +13,7 @@ This package contains Python utilities to run and benchmark the IFS.
 
 from pkg_resources import get_distribution, DistributionNotFound
 
-from .arch import * # noqa
+#from .arch import * # noqa
 from .benchmark import * # noqa
 from .cli import * # noqa
 from .darshanreport import * # noqa

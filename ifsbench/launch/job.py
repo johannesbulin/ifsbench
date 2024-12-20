@@ -14,7 +14,7 @@ from enum import Enum, auto
 from ..logging import error
 
 
-__all__ = ['CpuBinding', 'CpuDistribution', 'Job']
+__all__ = ['CpuBinding', 'CpuDistribution', 'CpuConfiguration', 'Job']
 
 class CpuConfiguration:
     """
@@ -44,13 +44,12 @@ class CpuConfiguration:
         The number of available GPUs per node.
     """
 
-    sockets_per_node: int
+    def __init__(self, **kwargs):
+        self.sockets_per_node = kwargs.get('sockets_per_node', 1)
+        self.cores_per_socket = kwargs.get('cores_per_socket', 1)
+        self.threads_per_core = kwargs.get('threads_per_core', 1)
+        self.gpus_per_node = kwargs.get('gpus_per_node', 0)
 
-    cores_per_socket: int
-
-    threads_per_core: int
-
-    gpus_per_node = 0
 
     def cores_per_node(self):
         """

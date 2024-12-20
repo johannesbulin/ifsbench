@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 import os
 
 from ..envhandler import EnvHandler, EnvOverride
-from ..logging import debug, info, critical
+from ..logging import debug, info
 from .job import CpuConfiguration, CpuBinding, Job
 
 __all__ = ['Arch', 'DefaultArch']
@@ -58,14 +58,21 @@ class DefaultArch(Arch):
         return self._launcher
 
     def process(self, job, **kwargs):
-        env_handlers = [EnvHandler([EnvOverride('OMP_NUM_THREADS', EnvOverride.EnvOperation.SET, job.cpus_per_task)])]
+        env_handlers = []
 
         account = self._account
         partition = self._partition
 
-        job = Job(**kwargs)
+        job = Job(job=job, **kwargs)
 
         if partition:
             job.set('partition', partition)
         if account:
             job.set('account', account)
+
+        if job.get('cpus_per_task', None):
+            override = EnvOverride('OMP_NUM_THREADS', EnvOverride.EnvOperation.SET, job.get('cpus_per_task', None))
+            env_handlers.append(EnvHandler([override]))
+
+
+        return job, env_handlers
