@@ -166,6 +166,9 @@ class NamelistHandler(DataHandler):
         debug(f"Modify namelist {input_path}.")
         namelist = f90nml.read(input_path)
 
+        namelist.uppercase = True
+        namelist.end_comma = True
+
         for override in self.overrides:
             override.apply(namelist)
 
