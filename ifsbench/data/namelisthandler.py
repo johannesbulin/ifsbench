@@ -17,7 +17,7 @@ import f90nml
 from ifsbench.config_mixin import PydanticConfigMixin
 from ifsbench.data.datahandler import DataHandler
 from ifsbench.logging import debug, info
-from ifsbench.namelist import sanitize_namelist
+from ifsbench.namelist import SanitiseMode, sanitise_namelist
 
 
 
@@ -145,7 +145,7 @@ class NamelistHandler(DataHandler):
     output_path: pathlib.Path
     overrides: List[NamelistOverride]
 
-    def execute(self, wdir, **kwargs):
+    def execute(self, wdir: pathlib.Path, **kwargs):
         wdir = pathlib.Path(wdir)
 
         if self.input_path.is_absolute():
@@ -180,27 +180,6 @@ class NamelistHandler(DataHandler):
 
         namelist.write(output_path, force=True)
 
-class SanitiseMode(Enum):
-    """
-    Specify, how duplicated entries in a namelist should be sanitised.
-    """
-
-    #: For multiply defined namelist groups, retain only the first.
-    FIRST = 'first'
-
-    #: For multiply defined namelist groups, retain only the last.
-    LAST = 'last'
-
-    #: For multiply defined namelist groups, merge variable definitions from
-    #: all groups. Conflicts are resolved by using the first occurence of a
-    #: variable.
-    MERGE_FIRST = 'merge_first'
-
-    #: For multiply defined namelist groups, merge variable definitions from
-    #: all groups. Conflicts are resolved by using the last occurence of a
-    #: variable.
-    MERGE_LAST = 'merge_last'
-
 class NamelistSanitiseHandler(DataHandler):
     """
     DataHandler specialisation that can sanitise Fortran namelists.
@@ -223,7 +202,7 @@ class NamelistSanitiseHandler(DataHandler):
     #: for the different options.
     mode: SanitiseMode = SanitiseMode.MERGE_LAST
 
-    def execute(self, wdir, **kwargs):
+    def execute(self, wdir: pathlib.Path, **kwargs):
         wdir = pathlib.Path(wdir)
 
         if self.input_path.is_absolute():
@@ -245,10 +224,11 @@ class NamelistSanitiseHandler(DataHandler):
         debug(f"Sanitise namelist {input_path} using sanitise mode {self.mode}.")
 
         namelist = f90nml.read(input_path)
+
         namelist.uppercase = True
         namelist.end_comma = True
 
-        namelist = sanitize_namelist(
+        namelist = sanitise_namelist(
             nml = namelist,
             merge_strategy=self.mode,
             mode='auto'
