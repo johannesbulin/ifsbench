@@ -462,4 +462,3 @@ def test_namelisthandler_write_symlink(
 
     assert namelist1['namelist1']['int'] == 5
     assert namelist2['namelist1']['int'] == 6
-
