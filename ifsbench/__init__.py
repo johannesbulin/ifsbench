@@ -34,6 +34,7 @@ from ifsbench.paths import *  # noqa
 from ifsbench.pydantic_utils import *  # noqa
 from ifsbench.serialisation_mixin import *  # noqa
 from ifsbench.util import *  # noqa
+from ifsbench.yaml import *  # noqa
 
 try:
     __version__ = version('ifsbench')
