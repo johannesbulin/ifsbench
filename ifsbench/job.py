@@ -10,10 +10,14 @@ Hardware and job resource description classes.
 """
 
 from enum import Enum
+from typing import List, Optional, Union
+
+from pydantic import model_validator, TypeAdapter
+from typing_extensions import Self
 
 from ifsbench.serialisation_mixin import SerialisationMixin
 
-__all__ = ['CpuBinding', 'CpuDistribution', 'CpuConfiguration', 'Job']
+__all__ = ['CpuBinding', 'CpuDistribution', 'CpuConfiguration', 'Job', 'JobOperation', 'JobOverride']
 
 
 class CpuConfiguration(SerialisationMixin):
@@ -100,41 +104,41 @@ class Job(SerialisationMixin):
     """
 
     #: The number of tasks/processes.
-    tasks: int = None
+    tasks: Optional[int] = None
 
     #: The number of nodes.
-    nodes: int = None
+    nodes: Optional[int] = None
 
     #: The number of tasks per node.
-    tasks_per_node: int = None
+    tasks_per_node: Optional[int] = None
 
     #: The number of tasks per socket.
-    tasks_per_socket: int = None
+    tasks_per_socket: Optional[int] = None
 
     #: The number of cpus assigned to each task.
-    cpus_per_task: int = None
+    cpus_per_task: Optional[int] = None
 
     #: The number of threads that each CPU core should run.
-    threads_per_core: int = None
+    threads_per_core: Optional[int] = None
 
     #: The number of GPUs that are required by each node.
-    gpus_per_node: int = None
+    gpus_per_node: Optional[int] = None
 
     #: The account that is passed to the scheduler.
-    account: str = None
+    account: Optional[str] = None
 
     #: The partition that is passed to the scheduler.
-    partition: str = None
+    partition: Optional[str] = None
 
     #: Specify the binding strategy to use for pinning.
-    bind: CpuBinding = None
+    bind: Optional[CpuBinding] = None
 
     #: Specify the distribution strategy to use for task distribution across nodes.
-    distribute_remote: CpuDistribution = None
+    distribute_remote: Optional[CpuDistribution] = None
 
     #: Specify the distribution strategy to use for task distribution across
     #: sockets within a node.
-    distribute_local: CpuDistribution = None
+    distribute_local: Optional[CpuDistribution] = None
 
     def clone(self):
         """
@@ -220,3 +224,95 @@ class Job(SerialisationMixin):
                 'The number of requested GPUs per node is '
                 'higher than the available number of GPUs per node.'
             )
+
+
+class JobOperation(str, Enum):
+    """
+    The type of operation to apply when overriding a Job attribute.
+    """
+
+    SET = 'set'
+    """Set the attribute to a new value."""
+
+    DELETE = 'delete'
+    """Delete (reset to None) an attribute."""
+
+
+class JobOverride(SerialisationMixin):
+    """
+    Specify changes that will be applied to a :class:`Job` object.
+
+    Parameters
+    ----------
+    attribute: str
+        The name of the Job field to override.
+
+    mode: JobOperation
+        What kind of operation is specified. Can be
+            * SET: Set the attribute to a new value.
+            * DELETE: Reset the attribute to None.
+
+    value: Union[int, float, str, bool, List, None]
+        The value that is set (SET operation).
+        Ignored for DELETE.
+    """
+
+    attribute: str
+    mode: JobOperation
+    value: Union[int, float, str, bool, List, None] = None
+
+    @model_validator(mode='after')
+    def validate_value_for_mode(self) -> Self:
+        if self.mode == JobOperation.SET:
+            if self.value is None:
+                raise ValueError(
+                    f"SET operation requires a non-None value for attribute '{self.attribute}'."
+                )
+            # Validate that the value is compatible with the Job field's type
+            field_info = Job.model_fields.get(self.attribute)
+            if field_info is not None:
+                try:
+                    TypeAdapter(field_info.annotation).validate_python(self.value)
+                except Exception as exc:
+                    raise ValueError(
+                        f"Value {self.value!r} is not valid for "
+                        f"Job field '{self.attribute}' "
+                        f"(expected {field_info.annotation}): {exc}"
+                    ) from exc
+        return self
+
+    def override(self, job: Job) -> Job:
+        """
+        Apply the override to a Job object.
+
+        Creates a copy of the given Job, applies the specified operation
+        to the copy, and returns the modified copy.
+
+        Parameters
+        ----------
+        job: :class:`Job`
+            The Job object to override.
+
+        Returns
+        -------
+        :class:`Job`
+            A new Job object with the override applied.
+
+        Raises
+        ------
+        ValueError
+            If the attribute is not a valid Job field.
+        """
+        if self.attribute not in Job.model_fields:
+            raise ValueError(
+                f"'{self.attribute}' is not a valid field of Job."
+            )
+
+        result = job.clone()
+
+        if self.mode == JobOperation.SET:
+            setattr(result, self.attribute, self.value)
+        elif self.mode == JobOperation.DELETE:
+            setattr(result, self.attribute, None)
+
+        return result
