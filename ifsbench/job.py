@@ -10,10 +10,14 @@ Hardware and job resource description classes.
 """
 
 from enum import Enum
+from typing import List, Union
+
+from pydantic import model_validator
+from typing_extensions import Self
 
 from ifsbench.serialisation_mixin import SerialisationMixin
 
-__all__ = ['CpuBinding', 'CpuDistribution', 'CpuConfiguration', 'Job']
+__all__ = ['CpuBinding', 'CpuDistribution', 'CpuConfiguration', 'Job', 'JobOperation', 'JobOverride']
 
 
 class CpuConfiguration(SerialisationMixin):
@@ -220,3 +224,96 @@ class Job(SerialisationMixin):
                 'The number of requested GPUs per node is '
                 'higher than the available number of GPUs per node.'
             )
+
+
+class JobOperation(str, Enum):
+    """
+    The type of operation to apply when overriding a Job attribute.
+    """
+
+    SET = 'set'
+    """Set the attribute to a new value."""
+
+    APPEND = 'append'
+    """Append a value to a list attribute."""
+
+    DELETE = 'delete'
+    """Delete (reset to None) an attribute."""
+
+
+class JobOverride(SerialisationMixin):
+    """
+    Specify changes that will be applied to a :class:`Job` object.
+
+    Parameters
+    ----------
+    attribute: str
+        The name of the Job field to override.
+
+    mode: JobOperation
+        What kind of operation is specified. Can be
+            * SET: Set the attribute to a new value.
+            * APPEND: Append to a list attribute.
+            * DELETE: Reset the attribute to None.
+
+    value: Union[int, float, str, bool, List, None]
+        The value that is set (SET operation) or appended (APPEND).
+        Ignored for DELETE.
+    """
+
+    attribute: str
+    mode: JobOperation
+    value: Union[int, float, str, bool, List, None] = None
+
+    @model_validator(mode='after')
+    def validate_value_for_mode(self) -> Self:
+        if self.value is None:
+            if self.mode in (JobOperation.SET, JobOperation.APPEND):
+                raise ValueError('The new value must not be None!')
+        return self
+
+    def override(self, job: Job) -> Job:
+        """
+        Apply the override to a Job object.
+
+        Creates a copy of the given Job, applies the specified operation
+        to the copy, and returns the modified copy.
+
+        Parameters
+        ----------
+        job: :class:`Job`
+            The Job object to override.
+
+        Returns
+        -------
+        :class:`Job`
+            A new Job object with the override applied.
+
+        Raises
+        ------
+        ValueError
+            If the attribute is not a valid Job field or if APPEND is used
+            on a non-list attribute.
+        """
+        if self.attribute not in Job.model_fields:
+            raise ValueError(
+                f"'{self.attribute}' is not a valid field of Job."
+            )
+
+        result = job.clone()
+
+        if self.mode == JobOperation.SET:
+            setattr(result, self.attribute, self.value)
+        elif self.mode == JobOperation.APPEND:
+            current = getattr(result, self.attribute)
+            if current is None:
+                current = []
+            if not isinstance(current, list):
+                raise ValueError('Values can only be appended to list attributes!')
+            current.append(self.value)
+            setattr(result, self.attribute, current)
+        elif self.mode == JobOperation.DELETE:
+            result.model_fields_set.discard(self.attribute)
+            result.__dict__[self.attribute] = None
+
+        return result
