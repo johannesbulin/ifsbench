@@ -74,10 +74,10 @@ def test_import_nested(yaml_dir):
     assert result == {'top': {'nested': {'level': 2}}}
 
 
-# -- !configure:--------------------------------------------------------------
+# -- !configure --------------------------------------------------------------
 
 def test_configure_basic(yaml_dir):
-    """!configure:substitutes template placeholders."""
+    """!configure substitutes template placeholders."""
     content = textwrap.dedent("""\
         templates:
           greeting:
@@ -93,7 +93,7 @@ def test_configure_basic(yaml_dir):
 
 
 def test_configure_multiple_values(yaml_dir):
-    """!configure:substitutes multiple placeholders."""
+    """!configure substitutes multiple placeholders."""
     content = textwrap.dedent("""\
         templates:
           point:
@@ -111,7 +111,7 @@ def test_configure_multiple_values(yaml_dir):
 
 
 def test_configure_preserves_template(yaml_dir):
-    """!configure:does not mutate the original template."""
+    """!configure does not mutate the original template."""
     content = textwrap.dedent("""\
         templates:
           item:
@@ -132,7 +132,7 @@ def test_configure_preserves_template(yaml_dir):
 
 
 def test_configure_missing_template(yaml_dir):
-    """!configure:raises KeyError for a missing template path."""
+    """!configure raises KeyError for a missing template path."""
     content = textwrap.dedent("""\
         instances:
           bad: !configure:missing/path
@@ -144,7 +144,7 @@ def test_configure_missing_template(yaml_dir):
 
 
 def test_configure_nested_template(yaml_dir):
-    """!configure:works with deeply nested template paths."""
+    """!configure works with deeply nested template paths."""
     content = textwrap.dedent("""\
         some_template:
           default_template:
