@@ -6,12 +6,12 @@
 # nor does it submit to any jurisdiction.
 
 """
-Utilities for loading YAML files with support for file imports and
-template-based configuration.
+Utilities for loading YAML files.
 """
 
 import copy
 from pathlib import Path
+from typing import Any, Dict, List, Type, Union
 
 import yaml
 
@@ -30,7 +30,7 @@ class _ConfigureMarker:
         self.overrides = overrides
 
 
-def _make_loader(base_dir):
+def _make_loader(base_dir, encoding):
     """
     Create a custom YAML loader with ``!import`` and ``!configure``
     constructors that resolve paths relative to *base_dir*.
@@ -41,17 +41,19 @@ def _make_loader(base_dir):
 
     def _import_constructor(loader, node):
         """Handle ``!import other_file.yaml``."""
+
         rel_path = loader.construct_scalar(node)
         import_path = (base_dir / rel_path).resolve()
         if not import_path.is_file():
-            raise FileNotFoundError(
-                f'Imported YAML file not found: {import_path}'
-            )
-        return read_yaml(str(import_path))
+            raise FileNotFoundError(f'Imported YAML file not found: {import_path}')
+        return read_yaml(str(import_path), encoding)
 
     def _configure_constructor(loader, tag_suffix, node):
         """Handle ``!configure:template/path`` mapping nodes."""
         overrides = loader.construct_mapping(node, deep=True)
+
+        template_ref = tag_suffix.lstrip(':')
+
         return _ConfigureMarker(tag_suffix.lstrip(':'), overrides)
 
     _Loader.add_constructor('!import', _import_constructor)
@@ -70,20 +72,23 @@ def _resolve_template(root, template_path):
         try:
             current = current[key]
         except (KeyError, TypeError):
-            raise KeyError(
-                f'Template path {template_path!r} not found in YAML document'
-            )
+            raise KeyError(f'Template path {template_path!r} not found in YAML document')
     return current
 
 
 def _substitute(obj, overrides):
     """
-    Recursively replace ``{key}`` placeholders in strings inside *obj*
+    Recursively replace ``${key}`` placeholders in strings inside *obj*
     with values from *overrides*.
     """
     if isinstance(obj, str):
+        # Check for an exact single-placeholder match first so that
+        # non-string override types are preserved.
         for key, value in overrides.items():
-            obj = obj.replace(f'{{{key}}}', str(value))
+            if obj == f'${{{key}}}':
+                return value
+        for key, value in overrides.items():
+            obj = obj.replace(f'${{{key}}}', str(value))
         return obj
     if isinstance(obj, dict):
         return {k: _substitute(v, overrides) for k, v in obj.items()}
@@ -107,19 +112,32 @@ def _resolve_markers(obj, root):
     return obj
 
 
-def read_yaml(filename, encoding='utf-8'):
+def read_yaml(filename: Union[str, Path], encoding='utf-8') -> Dict[str, Any]:
     """
-    Read and parse a YAML file with support for ``!import`` and
-    ``!configure`` directives.
+    Parse a YAML file and return the resulting dictionary.
 
-    The ``!import`` tag includes the content of another YAML file,
-    resolved relative to the directory of *filename*::
+    In addition to standard YAML files, using this function adds support for
 
+      * ``!import`` (includes the content of another file)
+      * ``!configure reference`` (copies an existing YAML block and replaces
+        { name } entries with specified values.
+
+    Parameters
+    ----------
+    filename: str or Path
+        The path to the YAML file.
+    encoding: str
+        The encoding that is used when opening the YAML file.
+
+    Returns
+    -------
+    Dict
+        The parsed values as a YAML file.
+
+
+    Example
+    -------
         included: !import other_file.yaml
-
-    The ``!configure`` tag references a template block defined
-    elsewhere in the same document and substitutes ``{key}``
-    placeholders with the provided values::
 
         templates:
           greeting:
@@ -129,33 +147,27 @@ def read_yaml(filename, encoding='utf-8'):
           welcome: !configure:templates/greeting
             name: World
 
-    Parameters
-    ----------
-    filename : str or path-like
-        Path to the YAML file to read.
-    encoding : str, optional
-        File encoding (default ``'utf-8'``).
-
-    Returns
-    -------
-    object
-        The parsed YAML content with all imports resolved and
-        templates substituted.
-
     Raises
     ------
     FileNotFoundError
         If *filename* or any ``!import``-ed file does not exist.
     """
+
+    # Get the directory where the main YAML file is stored. This is passed
+    # to the custom launcher as this path is used as the base for finding
+    # included files.
     filepath = Path(filename).resolve()
     if not filepath.is_file():
         raise FileNotFoundError(f'YAML file not found: {filepath}')
 
+    # Get the base_dir of the YAML file. This will be used as the reference
+    # directory for finding other YAML files to import.
     base_dir = filepath.parent
-    loader_cls = _make_loader(base_dir)
+    loader_cls = _make_loader(base_dir, encoding)
 
     with open(filepath, encoding=encoding) as fh:
         data = yaml.load(fh, Loader=loader_cls)
 
+    # Resolve the !configure annotations in a post-processing step.
     data = _resolve_markers(data, data)
     return data
