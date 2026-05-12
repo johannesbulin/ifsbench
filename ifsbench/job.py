@@ -12,7 +12,7 @@ Hardware and job resource description classes.
 from enum import Enum
 from typing import List, Union
 
-from pydantic import model_validator
+from pydantic import model_validator, TypeAdapter
 from typing_extensions import Self
 
 from ifsbench.serialisation_mixin import SerialisationMixin
@@ -234,9 +234,6 @@ class JobOperation(str, Enum):
     SET = 'set'
     """Set the attribute to a new value."""
 
-    APPEND = 'append'
-    """Append a value to a list attribute."""
-
     DELETE = 'delete'
     """Delete (reset to None) an attribute."""
 
@@ -253,11 +250,10 @@ class JobOverride(SerialisationMixin):
     mode: JobOperation
         What kind of operation is specified. Can be
             * SET: Set the attribute to a new value.
-            * APPEND: Append to a list attribute.
             * DELETE: Reset the attribute to None.
 
     value: Union[int, float, str, bool, List, None]
-        The value that is set (SET operation) or appended (APPEND).
+        The value that is set (SET operation).
         Ignored for DELETE.
     """
 
@@ -267,9 +263,20 @@ class JobOverride(SerialisationMixin):
 
     @model_validator(mode='after')
     def validate_value_for_mode(self) -> Self:
-        if self.value is None:
-            if self.mode in (JobOperation.SET, JobOperation.APPEND):
+        if self.mode == JobOperation.SET:
+            if self.value is None:
                 raise ValueError('The new value must not be None!')
+            # Validate that the value is compatible with the Job field's type
+            field_info = Job.model_fields.get(self.attribute)
+            if field_info is not None:
+                try:
+                    TypeAdapter(field_info.annotation).validate_python(self.value)
+                except Exception:
+                    raise ValueError(
+                        f"Value {self.value!r} is not valid for "
+                        f"Job field '{self.attribute}' "
+                        f"(expected {field_info.annotation})."
+                    )
         return self
 
     def override(self, job: Job) -> Job:
@@ -292,8 +299,7 @@ class JobOverride(SerialisationMixin):
         Raises
         ------
         ValueError
-            If the attribute is not a valid Job field or if APPEND is used
-            on a non-list attribute.
+            If the attribute is not a valid Job field.
         """
         if self.attribute not in Job.model_fields:
             raise ValueError(
@@ -304,14 +310,6 @@ class JobOverride(SerialisationMixin):
 
         if self.mode == JobOperation.SET:
             setattr(result, self.attribute, self.value)
-        elif self.mode == JobOperation.APPEND:
-            current = getattr(result, self.attribute)
-            if current is None:
-                current = []
-            if not isinstance(current, list):
-                raise ValueError('Values can only be appended to list attributes!')
-            current.append(self.value)
-            setattr(result, self.attribute, current)
         elif self.mode == JobOperation.DELETE:
             result.model_fields_set.discard(self.attribute)
             result.__dict__[self.attribute] = None
