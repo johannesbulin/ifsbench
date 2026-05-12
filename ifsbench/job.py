@@ -265,18 +265,20 @@ class JobOverride(SerialisationMixin):
     def validate_value_for_mode(self) -> Self:
         if self.mode == JobOperation.SET:
             if self.value is None:
-                raise ValueError('The new value must not be None!')
+                raise ValueError(
+                    f"SET operation requires a non-None value for attribute '{self.attribute}'."
+                )
             # Validate that the value is compatible with the Job field's type
             field_info = Job.model_fields.get(self.attribute)
             if field_info is not None:
                 try:
                     TypeAdapter(field_info.annotation).validate_python(self.value)
-                except Exception:
+                except Exception as exc:
                     raise ValueError(
                         f"Value {self.value!r} is not valid for "
                         f"Job field '{self.attribute}' "
-                        f"(expected {field_info.annotation})."
-                    )
+                        f"(expected {field_info.annotation}): {exc}"
+                    ) from exc
         return self
 
     def override(self, job: Job) -> Job:
