@@ -10,7 +10,7 @@ Hardware and job resource description classes.
 """
 
 from enum import Enum
-from typing import List, Union
+from typing import List, Optional, Union
 
 from pydantic import model_validator, TypeAdapter
 from typing_extensions import Self
@@ -104,41 +104,41 @@ class Job(SerialisationMixin):
     """
 
     #: The number of tasks/processes.
-    tasks: int = None
+    tasks: Optional[int] = None
 
     #: The number of nodes.
-    nodes: int = None
+    nodes: Optional[int] = None
 
     #: The number of tasks per node.
-    tasks_per_node: int = None
+    tasks_per_node: Optional[int] = None
 
     #: The number of tasks per socket.
-    tasks_per_socket: int = None
+    tasks_per_socket: Optional[int] = None
 
     #: The number of cpus assigned to each task.
-    cpus_per_task: int = None
+    cpus_per_task: Optional[int] = None
 
     #: The number of threads that each CPU core should run.
-    threads_per_core: int = None
+    threads_per_core: Optional[int] = None
 
     #: The number of GPUs that are required by each node.
-    gpus_per_node: int = None
+    gpus_per_node: Optional[int] = None
 
     #: The account that is passed to the scheduler.
-    account: str = None
+    account: Optional[str] = None
 
     #: The partition that is passed to the scheduler.
-    partition: str = None
+    partition: Optional[str] = None
 
     #: Specify the binding strategy to use for pinning.
-    bind: CpuBinding = None
+    bind: Optional[CpuBinding] = None
 
     #: Specify the distribution strategy to use for task distribution across nodes.
-    distribute_remote: CpuDistribution = None
+    distribute_remote: Optional[CpuDistribution] = None
 
     #: Specify the distribution strategy to use for task distribution across
     #: sockets within a node.
-    distribute_local: CpuDistribution = None
+    distribute_local: Optional[CpuDistribution] = None
 
     def clone(self):
         """
@@ -311,7 +311,6 @@ class JobOverride(SerialisationMixin):
         if self.mode == JobOperation.SET:
             setattr(result, self.attribute, self.value)
         elif self.mode == JobOperation.DELETE:
-            result.model_fields_set.discard(self.attribute)
-            result.__dict__[self.attribute] = None
+            setattr(result, self.attribute, None)
 
         return result
