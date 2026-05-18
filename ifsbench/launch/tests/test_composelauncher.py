@@ -62,7 +62,7 @@ def test_composelauncher_run_dir(
 ):
     """
     Test the run_dir component of the LaunchData object that is returned by
-    ComposeLauncher.prepare.
+    ComposeLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)
@@ -114,7 +114,7 @@ def test_composelauncher_env(
 ):
     """
     Test the env component of the LaunchData object that is returned by
-    ComposeLauncher.prepare.
+    ComposeLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)
@@ -166,7 +166,7 @@ def test_composelauncher_cmd(
 ):
     """
     Test the cmd component of the LaunchData object that is returned by
-    ComposeLauncher.prepare.
+    ComposeLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)

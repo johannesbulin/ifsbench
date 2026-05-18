@@ -15,8 +15,8 @@ from ifsbench.launch.launcher import LauncherWrapper, LaunchData
 
 class ComposeLauncher(LauncherWrapper):
     """
-    :any:`Launcher` implementation that appends/prepends to the launch command
-    of another launcher.
+    :any:`LauncherWrapper` implementation that appends/prepends to the launch
+    command of another launcher.
 
     The resulting launch command will be
         prepend_flags + original_command + flags + append_flags.
