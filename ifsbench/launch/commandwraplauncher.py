@@ -13,7 +13,7 @@ from ifsbench.env import EnvPipeline
 from ifsbench.launch.launcher import LauncherWrapper, LaunchData
 
 
-class ComposeLauncher(LauncherWrapper):
+class CommandWrapLauncher(LauncherWrapper):
     """
     :any:`LauncherWrapper` implementation that appends/prepends to the launch
     command of another launcher.

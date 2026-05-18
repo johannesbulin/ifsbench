@@ -6,14 +6,14 @@
 # nor does it submit to any jurisdiction.
 
 """
-Some sanity tests for the  :class:`ComposeLauncher` implementation.
+Some sanity tests for the  :class:`CommandWrapLauncher` implementation.
 """
 
 import pytest
 
 from ifsbench import (
     Job,
-    ComposeLauncher,
+    CommandWrapLauncher,
     DirectLauncher,
     SrunLauncher,
     EnvHandler,
@@ -47,7 +47,7 @@ def fixture_test_env_none():
 @pytest.mark.parametrize('base_launcher_flags', [[], ['--do-something']])
 @pytest.mark.parametrize('prepend_flags', [[], ['valgrind', '--tool=helgrind']])
 @pytest.mark.parametrize('append_flags', [[], ['--p=5']])
-def test_composelauncher_run_dir(
+def test_commandwraplauncher_run_dir(
     tmp_path,
     cmd,
     job,
@@ -62,12 +62,12 @@ def test_composelauncher_run_dir(
 ):
     """
     Test the run_dir component of the LaunchData object that is returned by
-    ComposeLauncher.wrap.
+    CommandWrapLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)
 
-    launcher = ComposeLauncher(
+    launcher = CommandWrapLauncher(
         flags=custom_flags, prepend_flags=prepend_flags, append_flags=append_flags
     )
     base_launch_data = base_launcher.prepare(
@@ -99,7 +99,7 @@ def test_composelauncher_run_dir(
 @pytest.mark.parametrize('base_launcher_flags', [[], ['--do-something']])
 @pytest.mark.parametrize('prepend_flags', [[], ['valgrind', '--tool=helgrind']])
 @pytest.mark.parametrize('append_flags', [[], ['--p=5']])
-def test_composelauncher_env(
+def test_commandwraplauncher_env(
     tmp_path,
     cmd,
     job,
@@ -114,12 +114,12 @@ def test_composelauncher_env(
 ):
     """
     Test the env component of the LaunchData object that is returned by
-    ComposeLauncher.wrap.
+    CommandWrapLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)
 
-    launcher = ComposeLauncher(
+    launcher = CommandWrapLauncher(
         flags=custom_flags, prepend_flags=prepend_flags, append_flags=append_flags
     )
     base_launch_data = base_launcher.prepare(
@@ -151,7 +151,7 @@ def test_composelauncher_env(
 @pytest.mark.parametrize('base_launcher_flags', [[], ['--do-something']])
 @pytest.mark.parametrize('prepend_flags', [[], ['valgrind', '--tool=helgrind']])
 @pytest.mark.parametrize('append_flags', [[], ['--p=5']])
-def test_composelauncher_cmd(
+def test_commandwraplauncher_cmd(
     tmp_path,
     cmd,
     job,
@@ -166,15 +166,15 @@ def test_composelauncher_cmd(
 ):
     """
     Test the cmd component of the LaunchData object that is returned by
-    ComposeLauncher.wrap.
+    CommandWrapLauncher.wrap.
     """
 
     env_pipeline = request.getfixturevalue(env_pipeline_name)
 
     if custom_flags is None:
-        launcher = ComposeLauncher(prepend_flags=prepend_flags, append_flags=append_flags)
+        launcher = CommandWrapLauncher(prepend_flags=prepend_flags, append_flags=append_flags)
     else:
-        launcher = ComposeLauncher(
+        launcher = CommandWrapLauncher(
             flags=custom_flags, prepend_flags=prepend_flags, append_flags=append_flags
         )
     base_launch_data = base_launcher.prepare(
