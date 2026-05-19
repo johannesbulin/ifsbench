@@ -145,12 +145,12 @@ class CommandOverride(SubclassableSerialisationMixin):
 
         Parameters
         ----------
-        cmd: list[str]
+        cmd: List[str]
             The original command.
 
         Returns
         -------
-        list[str]
+        List[str]
             The updated command.
         """
         return NotImplemented
@@ -201,8 +201,8 @@ class CompositeLauncher(Launcher):
     # Additional features that are added to the basic launch command.
     # Execution is in the order they are specified.
     wrappers: List[LauncherWrapper] = []
-    # Command overrides applied to the command before it is passed to the base launcher.
-    # Applied in order.
+    #: Command overrides applied to the command before it is passed to the base launcher.
+    #: Applied in order.
     command_overrides: List[CommandOverride] = []
 
     def prepare(
