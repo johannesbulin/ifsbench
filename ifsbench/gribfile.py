@@ -29,7 +29,7 @@ try:
         raise ImportError('eccodes version too low.')
     # pylint: enable=no-member
     ECCODES_AVAILABLE = True
-except (RuntimeError, ImportError):
+except (RuntimeError, ImportError, AttributeError):
     pass
 
 if ECCODES_AVAILABLE:
