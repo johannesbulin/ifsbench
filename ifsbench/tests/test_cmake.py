@@ -12,7 +12,7 @@ Functional tests for ifsbench CMake installation.
 import os
 from pathlib import Path
 import shutil
-from subprocess import CalledProcessError, PIPE
+from subprocess import CalledProcessError
 
 import pytest
 
@@ -24,7 +24,7 @@ def check_cmake():
     Check if CMake is available.
     """
     try:
-        execute(['cmake', '--version'], stdout=PIPE)
+        execute(['cmake', '--version'])
     except (CalledProcessError, FileNotFoundError):
         return False
     return True
@@ -38,7 +38,7 @@ def fixture_repo_root():
     """
     Return the ifsbench source directory.
     """
-    return Path(__file__).parents[1]
+    return Path(__file__).parents[2]
 
 
 @pytest.fixture(scope='module', name='ecbuild_cmake_dir')
