@@ -14,6 +14,8 @@ tutorials/data_pipelines
 tutorials/launchers
 tutorials/arch
 tutorials/benchmarks
+tutorials/results
+tutorials/validation
 ```
 
 ```{include} ../../README.md
