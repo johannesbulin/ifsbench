@@ -143,6 +143,108 @@ launcher:
 
 ---
 
+## Command-line launcher options
+
+`ifsbench` provides a set of [click](https://click.palletsprojects.com/) helpers
+that make it easy to expose launcher configuration in your own run scripts.
+
+### `launcher_options` decorator
+
+{func}`~ifsbench.command_line.click_launcher.launcher_options` is a click
+decorator that adds two options to any `@click.command`:
+
+| Option | Short | Description |
+|---|---|---|
+| `--launcher-config` | — | Path to a YAML file containing a full launcher configuration. |
+| `--launcher-flags` / `-f` | `-f` | Extra flags forwarded to the launcher (repeatable). |
+
+The decorated function receives a
+{class}`~ifsbench.command_line.click_launcher.LauncherBuilder` instance under
+the keyword argument `launcher_builder`.
+
+```python
+import click
+from ifsbench.command_line.click_launcher import launcher_options
+
+@click.command()
+@launcher_options
+def run(launcher_builder):
+    launcher = launcher_builder.build_from_arch()
+    # use launcher …
+```
+
+Invocation examples:
+
+```bash
+# Use the default launcher from the Arch object (no extra flags)
+python run.py
+
+# Load a complete launcher from a YAML file
+python run.py --launcher-config srun_config.yaml
+
+# Add extra srun flags without replacing the default launcher
+python run.py -f '--time=02:00:00' -f '--account=myproject'
+```
+
+### `LauncherBuilder`
+
+{class}`~ifsbench.command_line.click_launcher.LauncherBuilder` collects the
+command-line arguments and turns them into a concrete
+{class}`~ifsbench.launch.Launcher` object.
+
+| Method | Description |
+|---|---|
+| `build_from_arch(arch)` | Build a launcher, falling back to the default launcher defined by an {class}`~ifsbench.arch.Arch` object when no `--launcher-config` is given. |
+| `build_launcher(default_launcher, default_launcher_flags)` | Lower-level variant; supply defaults explicitly. |
+
+**Priority rules:**
+
+1. If `--launcher-config` is provided, the launcher is loaded from the YAML file
+   and any `--launcher-flags` are appended to it.
+2. Otherwise the `default_launcher` (typically from the `Arch`) is used and
+   `--launcher-flags` are appended to it.
+3. If neither is available, `None` is returned (meaning no launcher wrapping).
+
+```python
+from pathlib import Path
+from ifsbench.arch import DefaultArch
+from ifsbench.command_line.click_launcher import LauncherBuilder
+
+arch = DefaultArch.from_config({
+    'launcher': {'class_name': 'SrunLauncher'},
+    'cpu_config': {
+        'sockets_per_node': 2,
+        'cores_per_socket': 64,
+        'threads_per_core': 1,
+    },
+})
+
+builder = LauncherBuilder()
+builder.launcher_flags = ['--time=01:00:00', '--account=myproject']
+
+launcher = builder.build_from_arch(arch)
+```
+
+### YAML launcher configuration file
+
+The `--launcher-config` option accepts any YAML file that can be loaded via
+{meth}`~ifsbench.launch.Launcher.from_config`.
+For example:
+
+```yaml
+# srun_config.yaml
+class_name: SrunLauncher
+flags:
+  - --time=02:00:00
+  - --partition=gpu
+```
+
+```bash
+python run.py --launcher-config srun_config.yaml -f '--account=myproject'
+```
+
+---
+
 ## Standalone usage
 
 A launcher can be used independently of a full benchmark setup.
