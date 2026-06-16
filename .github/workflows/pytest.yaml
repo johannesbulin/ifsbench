@@ -116,6 +116,10 @@ jobs:
         run: |
           IFSBENCH_INSTALL_OPTIONS='[tests]' ./populate
 
+          # The populate step may create a build directory when wheels are
+          # built. Delete it before it causes problems.
+          rm -rf build
+      
       - name: Build with cmake/ecbuild
         run: |
           mkdir build && cd build
