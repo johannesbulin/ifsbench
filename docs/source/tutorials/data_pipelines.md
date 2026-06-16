@@ -1,9 +1,9 @@
-# Data pipelines
+# Data and environment pipelines
 
 A *data pipeline* in ifsbench is a sequence of operations that prepare the run
-directory before an executable is launched, or that manipulate environment
-variables at launch time.
-There are two kinds of pipeline steps:
+directory before an executable is launched. Similarly, *environment pipelines*
+can be used to set up environment variables before the launch.
+These pipelines are based on the following abstract base classes:
 
 * {class}`~ifsbench.data.DataHandler` — operates on files and directories.
 * {class}`~ifsbench.env.EnvHandler` — modifies environment variables.

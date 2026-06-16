@@ -141,27 +141,30 @@ result = asyncio.run(benchmark.run_async(run_dir=Path('/scratch/run'), arch=arch
 A complete benchmark configuration in YAML:
 
 ```yaml
+arch:
+  class_name: DefaultArch
+  cpu_config: {}
+  launcher:
+    class_name: MpirunLauncher
+
 setup:
   job:
-    tasks: 256
-    nodes: 8
-    cpus_per_task: 4
+    tasks: 2
 
   science:
     application:
       class_name: DefaultApplication
       command:
-        - /opt/myapp/bin/myapp
-        - --nml
-        - config.nml
+        - ls
+        - -l
 
     data_handlers_init:
       - class_name: FetchHandler
-        source_url: https://example.com/input.tar.gz
-        target_path: input.tar.gz
+        source_url: https://github.com/ecmwf-ifs/ifsbench/archive/refs/tags/0.2.3.tar.gz
+        target_path: ifsbench.tar.gz
 
       - class_name: ExtractHandler
-        archive_path: input.tar.gz
+        archive_path: ifsbench.tar.gz
 
     env_handlers:
       - mode: set
@@ -180,43 +183,15 @@ Loading and running from Python:
 ```python
 from pathlib import Path
 from ifsbench.yaml import read_yaml
-from ifsbench.benchmark import Benchmark
-from ifsbench.arch import DefaultArch
+from ifsbench.benchmark import Benchmark, BenchmarkSetup
+from ifsbench.arch import Arch
 
 data = read_yaml('benchmark.yaml')
-benchmark = Benchmark.from_config(data)
+benchmark_setup = BenchmarkSetup.from_config(data['setup'])
+arch = Arch.from_config(data['arch'])
 
-arch = DefaultArch.from_config(read_yaml('arch_hpc.yaml'))
-result = benchmark.run(run_dir=Path('/scratch/run'), arch=arch)
+benchmark = Benchmark(setup=benchmark_setup)
+
+result = benchmark.run(run_dir=Path('.'), arch=arch)
 ```
 
----
-
-## Keeping science and tech separate
-
-A common workflow is to store `ScienceSetup` and `TechSetup` in separate files
-and compose them using `!include`:
-
-```yaml
-# production.yaml
-setup:
-  science: !include science.yaml
-  tech: !include tech_production.yaml
-  job:
-    tasks: 512
-    nodes: 16
-    cpus_per_task: 4
-```
-
-```yaml
-# debug.yaml
-setup:
-  science: !include science.yaml
-  tech: !include tech_debug.yaml
-  job:
-    tasks: 16
-    nodes: 1
-    cpus_per_task: 4
-```
-
-This way, the scientific setup is defined once and shared across all variants.

@@ -113,14 +113,12 @@ each wrapper then transforms it in sequence.
 ```python
 from ifsbench.launch import CompositeLauncher, SrunLauncher
 from ifsbench.launch.bashlauncher import BashLauncher
-from ifsbench.launch.ddtlauncher import DDTLauncher
 
-# srun → record to bash script → open in DDT
+# srun → dump launch command to bash script and run
 launcher = CompositeLauncher(
     base_launcher=SrunLauncher(flags=['--time=01:00:00']),
     wrappers=[
         BashLauncher(),
-        DDTLauncher(flags=['--offline']),
     ],
 )
 ```
@@ -136,9 +134,6 @@ launcher:
       - --time=01:00:00
   wrappers:
     - class_name: BashLauncher
-    - class_name: DDTLauncher
-      flags:
-        - --offline
 ```
 
 ---

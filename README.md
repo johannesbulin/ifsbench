@@ -28,7 +28,7 @@ and a more "pythonic" flavour of tooling. The primary planned features are:
 
 ## Documentation
 
-Documentation can be build with sphinx by running `make html` in the `docs` directory.
+Documentation can be built with sphinx by running `make html` in the `docs` directory.
 Auto-generated documentation of the code in `main` is also [available here.](https://sites.ecmwf.int/docs/ifsbench/)
 
 ## Contact
