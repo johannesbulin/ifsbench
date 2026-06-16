@@ -36,8 +36,8 @@ Core Modules
 
 The package is organized into several key modules:
 
-* :ref:`ifsbench.data:Data Handling` - Comprehensive data pipeline management for benchmark setup
-* :ref:`ifsbench.launch:Launch Handling` - Execution of benchmark commands with various MPI launchers
+* :doc:`ifsbench_data` - Comprehensive data pipeline management for benchmark setup
+* :doc:`ifsbench_launch` - Execution of benchmark commands with various MPI launchers
 * :doc:`ifsbench_api` - Complete API reference documentation
 
 Getting Started
