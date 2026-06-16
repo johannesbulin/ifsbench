@@ -2,6 +2,9 @@
 :hidden:
 
 Home page <self>
+ifsbench_overview
+ifsbench_data
+ifsbench_launch
 ifsbench_api
 ```
 
