@@ -7,8 +7,7 @@
 
 from ifsbench.launch.launcher import *  # noqa
 from ifsbench.launch.bashlauncher import *  # noqa
-from ifsbench.launch.commandwrapoverride import *  # noqa
-from ifsbench.launch.commandwraplauncher import *  # noqa
+from ifsbench.launch.commandoverride import *  # noqa
 from ifsbench.launch.directlauncher import *  # noqa
 from ifsbench.launch.ddtlauncher import *  # noqa
 from ifsbench.launch.mpirunlauncher import *  # noqa

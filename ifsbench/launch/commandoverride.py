@@ -5,11 +5,37 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+from abc import abstractmethod
 from typing import List
 
-from ifsbench.launch.launcher import CommandOverride
+from ifsbench.serialisation_mixin import (
+    SubclassableSerialisationMixin,
+)
 
-__all__ = ['CommandWrapOverride']
+__all__ = ['CommandOverride', 'CommandWrapOverride']
+
+
+class CommandOverride(SubclassableSerialisationMixin):
+    """
+    Abstract base class for overriding a command before it is passed to a launcher.
+    """
+
+    @abstractmethod
+    def override(self, cmd: List[str]) -> List[str]:
+        """
+        Return an updated version of the given command.
+
+        Parameters
+        ----------
+        cmd: List[str]
+            The original command.
+
+        Returns
+        -------
+        List[str]
+            The updated command.
+        """
+        return NotImplemented
 
 
 class CommandWrapOverride(CommandOverride):

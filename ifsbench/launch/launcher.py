@@ -19,10 +19,11 @@ from ifsbench.serialisation_mixin import (
 )
 from ifsbench.env import EnvPipeline
 from ifsbench.job import Job
+from ifsbench.launch.commandoverride import CommandOverride
 from ifsbench.logging import debug, info
 from ifsbench.util import execute, execute_async, ExecuteResult
 
-__all__ = ['CommandOverride', 'CompositeLauncher', 'LaunchData', 'Launcher']
+__all__ = ['CompositeLauncher', 'LaunchData', 'Launcher']
 
 
 @dataclass
@@ -133,29 +134,6 @@ class Launcher(SubclassableSerialisationMixin):
         return NotImplemented
 
 
-class CommandOverride(SubclassableSerialisationMixin):
-    """
-    Abstract base class for overriding a command before it is passed to a launcher.
-    """
-
-    @abstractmethod
-    def override(self, cmd: List[str]) -> List[str]:
-        """
-        Return an updated version of the given command.
-
-        Parameters
-        ----------
-        cmd: List[str]
-            The original command.
-
-        Returns
-        -------
-        List[str]
-            The updated command.
-        """
-        return NotImplemented
-
-
 class LauncherWrapper(SubclassableSerialisationMixin):
     # command line flags to pass to the laucher
     flags: List['str'] = []
@@ -201,6 +179,7 @@ class CompositeLauncher(Launcher):
     # Additional features that are added to the basic launch command.
     # Execution is in the order they are specified.
     wrappers: List[LauncherWrapper] = []
+
     #: Command overrides applied to the command before it is passed to the base launcher.
     #: Applied in order.
     command_overrides: List[CommandOverride] = []
