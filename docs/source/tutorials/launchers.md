@@ -169,7 +169,7 @@ from ifsbench.command_line.click_launcher import launcher_options
 @click.command()
 @launcher_options
 def run(launcher_builder):
-    launcher = launcher_builder.build_from_arch()
+    launcher = launcher_builder.build_launcher()
     # use launcher …
 ```
 
