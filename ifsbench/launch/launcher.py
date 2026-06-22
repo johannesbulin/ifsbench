@@ -19,6 +19,7 @@ from ifsbench.serialisation_mixin import (
 )
 from ifsbench.env import EnvPipeline
 from ifsbench.job import Job
+from ifsbench.launch.commandoverride import CommandOverride
 from ifsbench.logging import debug, info
 from ifsbench.util import execute, execute_async, ExecuteResult
 
@@ -179,6 +180,10 @@ class CompositeLauncher(Launcher):
     # Execution is in the order they are specified.
     wrappers: List[LauncherWrapper] = []
 
+    #: Command overrides applied to the command before it is passed to the base launcher.
+    #: Applied in order.
+    command_overrides: List[CommandOverride] = []
+
     def prepare(
         self,
         run_dir: Path,
@@ -212,6 +217,8 @@ class CompositeLauncher(Launcher):
 
         LaunchData
         """
+        for command_override in self.command_overrides:
+            cmd = command_override.override(cmd)
         launch_data = self.base_launcher.prepare(
             run_dir, job, cmd, library_paths, env_pipeline, self.flags
         )
