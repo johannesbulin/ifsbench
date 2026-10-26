@@ -1,0 +1,5 @@
+# Hash-pinned pip (eMudhra/emSign CA incident): pip versions older than 26.2.2
+# trust compromised CA certificates. pip verifies the sha256 of this wheel, so
+# installing it is safe even when done by an older pip. The same file is used
+# for online installs and offline installs from a wheelhouse (--find-links).
+pip==26.2.2 --hash=sha256:fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70

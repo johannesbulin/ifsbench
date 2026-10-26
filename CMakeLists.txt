@@ -57,6 +57,13 @@ install( DIRECTORY cmake DESTINATION ${INSTALL_DATA_DIR} PATTERN "CMakeLists.txt
 # The list of ifsbench frontend scripts
 set( IFSBENCH_EXECUTABLES ifs-bench.py nml-diff.py )
 
+# Optionally use the ARTIFACTS_DIR as wheelhouse, if provided
+if( DEFINED ARTIFACTS_DIR )
+    set( WHEELS_DIR_OPTION WHEELS_DIR "${ARTIFACTS_DIR}" )
+else()
+    set( WHEELS_DIR_OPTION "" )
+endif()
+
 # Setup Python virtual environment
 include( ifsbench_python_macros )
 set( PYTHON_VERSION 3.8 )
@@ -64,6 +71,7 @@ ifsbench_setup_python_venv(
     VENV_NAME ifsbench_env
     PYTHON_VERSION ${PYTHON_VERSION}
     INSTALL_VENV
+    ${WHEELS_DIR_OPTION}
 )
 
 # Enable Pytest testing
@@ -89,13 +97,6 @@ set( _INSTALL_OPTIONS "" )
 if( IFSBENCH_INSTALL_OPTIONS )
     list( JOIN IFSBENCH_INSTALL_OPTIONS "," _INSTALL_OPT_STR )
     set( _INSTALL_OPTIONS "[${_INSTALL_OPT_STR}]" )
-endif()
-
-# Optionally use the ARTIFACTS_DIR as wheelhouse, if provided
-if( DEFINED ARTIFACTS_DIR )
-    set( WHEELS_DIR_OPTION WHEELS_DIR "${ARTIFACTS_DIR}" )
-else()
-    set( WHEELS_DIR_OPTION "" )
 endif()
 
 if( HAVE_EDITABLE )

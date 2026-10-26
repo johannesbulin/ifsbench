@@ -6,6 +6,9 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+# Hash-pinned pip (eMudhra/emSign CA incident), shared with the CI workflows
+set( IFSBENCH_PIP_BOOTSTRAP_FILE "${CMAKE_CURRENT_LIST_DIR}/../ci/pip-bootstrap.txt" )
+
 ##############################################################################
 #.rst:
 #
@@ -79,14 +82,17 @@ endfunction()
 # Discover a Python 3 interpreter and create a virtual environment at the
 # specified location ``VENV_PATH``. ::
 #
-#   ifsbench_create_python_venv( VENV_PATH <path> [ PYTHON_VERSION <version str> ] [ INSTALL_VENV ] )
+#   ifsbench_create_python_venv( VENV_PATH <path> [ PYTHON_VERSION <version str> ] [ INSTALL_VENV ] [ WHEELS_DIR <path> ] )
+#
+# The venv's pip is replaced by the hash-pinned pip from ``IFSBENCH_PIP_BOOTSTRAP_FILE``,
+# taken from ``WHEELS_DIR`` if given (offline installation).
 #
 ##############################################################################
 
 function( ifsbench_create_python_venv )
 
     set( options INSTALL_VENV )
-    set( oneValueArgs VENV_NAME PYTHON_VERSION )
+    set( oneValueArgs VENV_NAME PYTHON_VERSION WHEELS_DIR )
     set( multiValueArgs "" )
 
     cmake_parse_arguments( _PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -120,18 +126,24 @@ function( ifsbench_create_python_venv )
     execute_process( COMMAND ${Python3_EXECUTABLE} -m venv "${VENV_PATH}" COMMAND_ERROR_IS_FATAL ANY )
     set( Python3_VENV_NAME "${_PAR_VENV_NAME}" PARENT_SCOPE )
 
-    # Make sure the venv starts with an up-to-date pip
+    # Make sure the venv uses a pip that does not trust compromised CA certificates
+    if( _PAR_WHEELS_DIR )
+        set( _PIP_SOURCE --no-index --find-links "${_PAR_WHEELS_DIR}" )
+    else()
+        set( _PIP_SOURCE "" )
+    endif()
     execute_process(
-        COMMAND "${VENV_PATH}/bin/python" -m pip install --upgrade pip
+        COMMAND "${VENV_PATH}/bin/python" -m pip install --disable-pip-version-check ${_PIP_SOURCE} -r "${IFSBENCH_PIP_BOOTSTRAP_FILE}"
         COMMAND_ERROR_IS_FATAL ANY
     )
 
     # Upon installation, we create an equivalent Python venv in the installation directory
     if( _PAR_INSTALL_VENV )
+        list( JOIN _PIP_SOURCE " " _PIP_SOURCE )
         install(
             CODE
                 "execute_process( COMMAND ${Python3_EXECUTABLE} -m venv \${CMAKE_INSTALL_PREFIX}/var/${_PAR_VENV_NAME} RESULT_VARIABLE _RET )
-                execute_process( COMMAND \${CMAKE_INSTALL_PREFIX}/var/${_PAR_VENV_NAME}/bin/python -m pip install --upgrade pip COMMAND_ERROR_IS_FATAL ANY )"
+                execute_process( COMMAND \${CMAKE_INSTALL_PREFIX}/var/${_PAR_VENV_NAME}/bin/python -m pip install --disable-pip-version-check ${_PIP_SOURCE} -r ${IFSBENCH_PIP_BOOTSTRAP_FILE} COMMAND_ERROR_IS_FATAL ANY )"
         )
         set( Python3_INSTALL_VENV TRUE PARENT_SCOPE )
     endif()
@@ -146,7 +158,7 @@ endfunction()
 #
 # Find Python 3, create a virtual environment and make it available. ::
 #
-#   ifsbench_setup_python_venv( VENV_PATH <path> [ PYTHON_VERSION <version str> ] [ INSTALL_VENV ] )
+#   ifsbench_setup_python_venv( VENV_PATH <path> [ PYTHON_VERSION <version str> ] [ INSTALL_VENV ] [ WHEELS_DIR <path> ] )
 #
 # It combines calls to ``ifsbench_create_python_venv`` and ``ifsbench_find_python_venv``
 #
@@ -155,7 +167,7 @@ endfunction()
 function( ifsbench_setup_python_venv )
 
     set( options INSTALL_VENV )
-    set( oneValueArgs VENV_NAME PYTHON_VERSION )
+    set( oneValueArgs VENV_NAME PYTHON_VERSION WHEELS_DIR )
     set( multiValueArgs "" )
 
     cmake_parse_arguments( _PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -175,6 +187,9 @@ function( ifsbench_setup_python_venv )
     endif()
     if( _PAR_INSTALL_VENV )
         list( APPEND _ARGS INSTALL_VENV )
+    endif()
+    if( _PAR_WHEELS_DIR )
+        list( APPEND _ARGS WHEELS_DIR "${_PAR_WHEELS_DIR}" )
     endif()
 
     ifsbench_create_python_venv( ${_ARGS} )
@@ -272,7 +287,12 @@ function( ifsbench_download_python_wheels )
         RESULT_VARIABLE _RET_VAL
     )
 
-    if( "${_RET_VAL}" EQUAL "0" )
+    # The hash-pinned pip wheel must be in the wheelhouse as well
+    file( STRINGS "${IFSBENCH_PIP_BOOTSTRAP_FILE}" _PIP_PIN REGEX "^pip==" )
+    string( REGEX REPLACE "^pip==([^ ]+).*" "\\1" _PIP_VERSION "${_PIP_PIN}" )
+    set( _PIP_WHEEL "${WHEELS_DIR}/pip-${_PIP_VERSION}-py3-none-any.whl" )
+
+    if( "${_RET_VAL}" EQUAL "0" AND EXISTS "${_PIP_WHEEL}" )
 
         message( STATUS "All dependency wheels for ${_PAR_REQUIREMENT_SPEC} found in cache" )
 
@@ -280,10 +300,23 @@ function( ifsbench_download_python_wheels )
 
         message( STATUS "Downloading dependency wheels for ${_PAR_REQUIREMENT_SPEC} to ${WHEELS_DIR}" )
 
+        # The system pip may trust compromised CA certificates. Download the
+        # hash-pinned pip (also needed for offline venvs) and run all further
+        # downloads with it directly from the wheel.
+        execute_process(
+            COMMAND
+                ${Python3_EXECUTABLE} -m pip download
+                    --disable-pip-version-check --no-deps --dest "${WHEELS_DIR}"
+                    -r "${IFSBENCH_PIP_BOOTSTRAP_FILE}"
+            COMMAND_ERROR_IS_FATAL ANY
+            OUTPUT_QUIET
+        )
+        set( _PIP ${Python3_EXECUTABLE} "${_PIP_WHEEL}/pip" )
+
         # Download typical build dependencies for wheels. Keep setuptools in
         # sync with ifsbench's pyproject.toml build-system constraints.
         set( _CMD
-            ${Python3_EXECUTABLE} -m pip download
+            ${_PIP} download
             --disable-pip-version-check --dest "${WHEELS_DIR}"
             ${PIP_OPTIONS} setuptools>=75.0.0,<80.10.0 wheel setuptools_scm[toml]>=6.2,<9.3
         )
@@ -295,7 +328,7 @@ function( ifsbench_download_python_wheels )
 
         # Download dependencies for the specified REQUIREMENT_SPEC
         set( _CMD
-            ${Python3_EXECUTABLE} -m pip download
+            ${_PIP} download
             --disable-pip-version-check --dest "${WHEELS_DIR}"
             ${PIP_OPTIONS} ${_PAR_REQUIREMENT_SPEC}
         )
@@ -307,7 +340,7 @@ function( ifsbench_download_python_wheels )
 
         execute_process(
             COMMAND
-                ${Python3_EXECUTABLE} -m pip wheel
+                ${_PIP} wheel
                     --disable-pip-version-check --wheel-dir "${WHEELS_DIR}"
                     ${_PAR_REQUIREMENT_SPEC}
             COMMAND_ERROR_IS_FATAL ANY

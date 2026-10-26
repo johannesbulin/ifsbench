@@ -7,6 +7,13 @@ There are multiple ways to install ifsbench:
 ## Requirements
 
 - Python 3.8+ with virtualenv and pip
+- pip 26.2.2+ (older pip versions trust compromised eMudhra/emSign CA
+  certificates; this may require a newer Python version)
+
+All installation methods below first install a hash-pinned pip into the virtual
+environment. Because pip verifies the sha256 of the wheel, this is safe even
+when it is done by an older pip with a compromised trust store. The CMake/ecbuild
+installation does this automatically.
 
 ## Installation without prior download
 
@@ -16,6 +23,9 @@ require downloading the source code. Simply run the following commands:
 ```bash
 python3 -m venv ifsbench_env  # Create a virtual environment
 source ifsbench_env/bin/activate  # Activate the virtual environment
+
+# Install a hash-pinned pip that does not trust compromised CA certificates
+python3 -m pip install "pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"
 
 # Installation of the ifsbench core library
 pip install "ifsbench @ git+https://github.com/ecmwf-ifs/ifsbench.git"
@@ -39,6 +49,9 @@ enter the created source directory and choose one of the following installation 
 ```bash
 python3 -m venv ifsbench_env  # Create a virtual environment
 source ifsbench_env/bin/activate  # Activate the virtual environment
+
+# Install a hash-pinned pip that does not trust compromised CA certificates
+python3 -m pip install -r ci/pip-bootstrap.txt
 
 # Installation of the ifsbench core library
 # Optional:
