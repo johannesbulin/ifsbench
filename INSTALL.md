@@ -6,7 +6,7 @@ There are multiple ways to install ifsbench:
 
 ## Requirements
 
-- Python 3.8+ with virtualenv and pip
+- Python 3.10+ with virtualenv and pip
 
 ## Installation without prior download
 

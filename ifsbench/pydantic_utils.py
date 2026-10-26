@@ -14,15 +14,8 @@ Additional tools to support pydantic usage in ifsbench.
 # serialise_frame function for more information.
 # pylint: disable=W0611
 
-from typing import Any, Dict, List, Union
+from typing import Annotated, Any, Dict, List, Union
 from typing_extensions import TypeAliasType
-
-try:
-    # Annotated is only available in typing for Python >=3.9.
-    from typing import Annotated
-except ImportError:
-    from typing_extensions import Annotated
-
 
 from pandas import DataFrame, Timestamp
 from pydantic_core import core_schema

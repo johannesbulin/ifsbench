@@ -10,13 +10,12 @@ Some sanity tests the Benchmark implementation.
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 from time import sleep
 import sys
 import yaml
 
 import pytest
-from typing_extensions import Literal
 
 from ifsbench import (
     Benchmark,

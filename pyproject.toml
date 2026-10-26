@@ -13,9 +13,17 @@ authors = [
   {name = "ECMWF", email = "user_support_section@ecmwf.int"},
 ]
 description = "Toolbox for running, testing and benchmarking the IFS"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 dynamic = ["version", "readme"]
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+]
 dependencies = [
   "pandas >= 1.4.0",   # essential for benchmarking data
   "pyyaml",   # essential for file handling
@@ -24,6 +32,7 @@ dependencies = [
   "f90nml",   # essential for namelist handling
   "netcdf4",  # essential for reading netcdf files
   "xarray",   # essential for data handling
+  "typing_extensions", # backports of typing features (Self, TypeAliasType)
 ]
 
 [project.optional-dependencies]
@@ -39,7 +48,8 @@ tests = [
 grib = [
   "cfgrib",
   "eccodes",
-  "pygrib == 2.1.4",
+  "packaging",
+  "pygrib",
 ]
 
 docs = [
@@ -75,6 +85,7 @@ namespaces = false
 
 [tool.ruff]
 line-length = 100
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "single"

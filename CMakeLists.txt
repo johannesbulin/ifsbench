@@ -59,7 +59,7 @@ set( IFSBENCH_EXECUTABLES ifs-bench.py nml-diff.py )
 
 # Setup Python virtual environment
 include( ifsbench_python_macros )
-set( PYTHON_VERSION 3.8 )
+set( PYTHON_VERSION 3.10 )
 ifsbench_setup_python_venv(
     VENV_NAME ifsbench_env
     PYTHON_VERSION ${PYTHON_VERSION}

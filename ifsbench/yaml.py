@@ -56,18 +56,10 @@ def _make_loader(base_dir, encoding):
         # get rid of all ../ magic without resolving symlinks.
         include_path = Path(os.path.normpath(base_dir / rel_path))
 
-        try:
-            # Check whether the include path is relative to base_dir.
-            # Path.is_relative_to doesn't exist in Python 3.8 and can't deal
-            # with relative paths like ../some_other_dir/my_yaml.yaml which
-            # would allow escaping from the main directory.
-            # Therefore we use relative_to here and check whether the path
-            # differene starts with ..
-            path_diff = include_path.relative_to(base_dir)
-            if str(path_diff).startswith('..'):
-                raise ValueError
-        except ValueError:
-            # pylint: disable=W0707
+        # Check whether the include path is inside base_dir. As include_path
+        # is normalised, paths like ../some_other_dir/my_yaml.yaml can't be
+        # used to escape from the main directory.
+        if not include_path.is_relative_to(base_dir):
             raise ValueError('The !include path must be relative to the main YAML file!')
 
         if not include_path.is_file():

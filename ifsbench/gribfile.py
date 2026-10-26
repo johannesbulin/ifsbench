@@ -22,12 +22,10 @@ PYGRIB_AVAILABLE = False
 
 try:
     import eccodes
-    from pkg_resources import packaging
+    from packaging.version import Version
 
-    # pylint: disable=no-member
-    if packaging.version.parse(eccodes.__version__) < packaging.version.parse('2.33.0'):
+    if Version(eccodes.__version__) < Version('2.33.0'):
         raise ImportError('eccodes version too low.')
-    # pylint: enable=no-member
     ECCODES_AVAILABLE = True
 except (RuntimeError, ImportError, AttributeError):
     pass

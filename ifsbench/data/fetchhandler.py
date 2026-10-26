@@ -52,9 +52,10 @@ class FetchHandler(DataHandler):
         debug(f'Download file from {self.source_url} to {target_path}.')
 
         try:
-            with urllib.request.urlopen(self.source_url) as source, target_path.open(
-                'wb'
-            ) as target:
+            with (
+                urllib.request.urlopen(self.source_url) as source,
+                target_path.open('wb') as target,
+            ):
                 shutil.copyfileobj(source, target)
         except urllib.error.URLError as ue:
             warning(f'Fetching file failed: {ue}')

@@ -6,8 +6,8 @@
 # nor does it submit to any jurisdiction.
 
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Type, Union
-from typing_extensions import Annotated, Literal, TypeAliasType
+from typing import Annotated, Any, ClassVar, Dict, List, Literal, Type, Union
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel, Field, model_validator, TypeAdapter, model_serializer
 from pydantic.fields import FieldInfo
