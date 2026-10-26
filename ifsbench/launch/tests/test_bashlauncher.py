@@ -89,7 +89,7 @@ def test_bashlauncher_run_dir(
         env_pipeline=env_pipeline,
     )
 
-    assert result.run_dir == result.run_dir
+    assert result.run_dir == tmp_path
 
 
 @pytest.mark.parametrize('cmd', [['ls', '-l'], ['something']])
